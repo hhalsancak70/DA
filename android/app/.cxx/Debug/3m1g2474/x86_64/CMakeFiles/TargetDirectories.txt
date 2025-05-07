@@ -1,0 +1,2 @@
+/Users/hhalsancak/Documents/GitHub/DigiAdi_/android/app/.cxx/Debug/3m1g2474/x86_64/CMakeFiles/edit_cache.dir
+/Users/hhalsancak/Documents/GitHub/DigiAdi_/android/app/.cxx/Debug/3m1g2474/x86_64/CMakeFiles/rebuild_cache.dir

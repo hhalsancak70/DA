@@ -1,0 +1,129 @@
+{
+  "urunler": [
+    {
+      "id": 1,
+      "kategori": 2,
+      "isim": "Sucuklu Yumurta",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 180
+    },
+    {
+      "id": 2,
+      "kategori": 2,
+      "isim": "Pastirmali Yumurta",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 210
+    },
+    {
+      "id": 3,
+      "kategori": 2,
+      "isim": "Menemen",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 180
+    },
+    {
+      "id": 4,
+      "kategori": 2,
+      "isim": "Kavurmali Yumurta",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 210
+    },
+    {
+      "id": 5,
+      "kategori": 4,
+      "isim": "Pacanga Boregi",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 165
+    },
+    {
+      "id": 6,
+      "kategori": 4,
+      "isim": "Kalem Boregi",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 145
+    },
+    {
+      "id": 7,
+      "kategori": 6,
+      "isim": "Bazlama Tost",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 125
+    },
+    {
+      "id": 8,
+      "kategori": 7,
+      "isim": "Gozleme",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 155
+    },
+    {
+      "id": 9,
+      "kategori": 1,
+      "isim": "Tepsi Kahvalti",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 600
+    },
+    {
+      "id": 10,
+      "kategori": 1,
+      "isim": "Kahvalti Tabagi",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 250
+    },
+    {
+      "id": 11,
+      "kategori": 1,
+      "isim": "Serpme Kahvalti",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 350
+    },
+    {
+      "id": 12,
+      "kategori": 5,
+      "isim": "Pacanga Pide Tost",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 155
+    },
+    {
+      "id": 13,
+      "kategori": 5,
+      "isim": "Aglayan Tost",
+      "resim": "assets/images/pacanga.png",
+      "fiyat": 165
+    }
+  ],
+  "kategoriler": [
+    {
+      "id": 1,
+      "isim": "Kahvaltilar"
+    },
+    {
+      "id": 2,
+      "isim": "Tavalar"
+    },
+    {
+      "id": 3,
+      "isim": "Yoresel Yemekler"
+    },
+    {
+      "id": 4,
+      "isim": "Borekler"
+    },
+    {
+      "id": 5,
+      "isim": "Tostlar"
+    },
+    {
+      "id": 6,
+      "isim": "Menuler"
+    },
+    {
+      "id": 7,
+      "isim": "Gozlemeler"
+    },
+    {
+      "id": 8,
+      "isim": "Icecekler"
+    }
+  ]
+}

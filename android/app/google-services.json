@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "824302818982",
+    "project_id": "pacanga-a586f",
+    "storage_bucket": "pacanga-a586f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:824302818982:android:69b5bba275afb6e7ca4667",
+        "android_client_info": {
+          "package_name": "com.example.digiadi"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAIJph1tuTtOgKYXHlRMNEacdHq98peydw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

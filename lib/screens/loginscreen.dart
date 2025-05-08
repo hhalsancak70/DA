@@ -20,7 +20,7 @@ class _LoginScreenState extends State<LoginScreen>
   final TextEditingController _passwordController = TextEditingController();
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _confirmPasswordController =
-      TextEditingController();
+  TextEditingController();
   final TextEditingController _adminCodeController = TextEditingController();
   bool _rememberMe = false;
   bool _isLoginMode = true;
@@ -189,137 +189,265 @@ class _LoginScreenState extends State<LoginScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF5F5F5),
       body: Container(
+        width: double.infinity,
+        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [Color(0xFF43cea2), Color(0xFF185a9d)],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [Color(0xFFFF7E5F), Color(0xFFFFA07A)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: Center(
-          child: FadeTransition(
-            opacity: _animation,
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Form(
-                key: _formKey,
-                child: SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Hero(
-                        tag: 'logo',
-                        child: Icon(Icons.lock, size: 72, color: Colors.white),
-                      ),
-                      const SizedBox(height: 24),
-                      if (!_isLoginMode)
-                        TextFormField(
-                          controller: _nameController,
-                          decoration: const InputDecoration(
-                            labelText: 'Ad Soyad',
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _emailController,
-                        decoration: const InputDecoration(
-                          labelText: 'Email',
-                          filled: true,
-                          fillColor: Colors.white,
-                        ),
-                        keyboardType: TextInputType.emailAddress,
-                      ),
-                      const SizedBox(height: 16),
-                      TextFormField(
-                        controller: _passwordController,
-                        obscureText: _obscurePassword,
-                        decoration: InputDecoration(
-                          labelText: 'Şifre',
-                          filled: true,
-                          fillColor: Colors.white,
-                          suffixIcon: IconButton(
-                            icon: Icon(
-                              _obscurePassword
-                                  ? Icons.visibility
-                                  : Icons.visibility_off,
-                            ),
-                            onPressed: () => setState(
-                                () => _obscurePassword = !_obscurePassword),
-                          ),
-                        ),
-                      ),
-                      if (!_isLoginMode) ...[
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _confirmPasswordController,
-                          obscureText: _obscureConfirmPassword,
-                          decoration: InputDecoration(
-                            labelText: 'Şifre Onayı',
-                            filled: true,
-                            fillColor: Colors.white,
-                            suffixIcon: IconButton(
-                              icon: Icon(
-                                _obscureConfirmPassword
-                                    ? Icons.visibility
-                                    : Icons.visibility_off,
-                              ),
-                              onPressed: () => setState(() =>
-                                  _obscureConfirmPassword =
-                                      !_obscureConfirmPassword),
-                            ),
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextFormField(
-                          controller: _adminCodeController,
-                          decoration: const InputDecoration(
-                            labelText: 'Admin Kodu',
-                            filled: true,
-                            fillColor: Colors.white,
-                          ),
-                        ),
-                      ],
-                      const SizedBox(height: 16),
-                      if (_isLoginMode)
-                        Row(
-                          children: [
-                            Checkbox(
-                              value: _rememberMe,
-                              onChanged: (value) {
-                                setState(() {
-                                  _rememberMe = value!;
-                                });
-                              },
-                            ),
-                            const Text('Beni Hatırla',
-                                style: TextStyle(color: Colors.white)),
-                          ],
-                        ),
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: _isLoading
-                            ? null
-                            : () =>
-                                _isLoginMode ? _handleLogin() : _handleSignup(),
-                        child: _isLoading
-                            ? const CircularProgressIndicator(
-                                color: Colors.white)
-                            : Text(_isLoginMode ? 'Giriş Yap' : 'Kayıt Ol'),
-                      ),
-                      TextButton(
-                        onPressed: _toggleMode,
-                        child: Text(
-                          _isLoginMode ? 'Admin hesabı oluştur' : 'Giriş yap',
-                          style: const TextStyle(color: Colors.white),
-                        ),
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const SizedBox(height: 32),
+                Container(
+                  width: 90,
+                  height: 90,
+                  decoration: const BoxDecoration(
+                    color: Colors.white24,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.restaurant_menu,
+                      size: 60, color: Colors.white),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'DigiAdi',
+                  style: TextStyle(
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                    letterSpacing: 1.2,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.white24,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: const Text(
+                    'Restoran Yönetim Sistemi',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.w500),
+                  ),
+                ),
+                const SizedBox(height: 32),
+                Container(
+                  width: 500,
+                  constraints: const BoxConstraints(maxWidth: 500),
+                  padding:
+                  const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.07),
+                        blurRadius: 16,
+                        offset: const Offset(0, 8),
                       ),
                     ],
                   ),
+                  child: Form(
+                    key: _formKey,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                                _isLoginMode
+                                    ? Icons.login
+                                    : Icons.verified_user,
+                                color: const Color(0xFFFF7E5F)),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isLoginMode ? 'Giriş Yap' : 'Admin Kaydı',
+                              style: const TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: Color(0xFFFF7E5F)),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 24),
+                        if (!_isLoginMode) ...[
+                          TextFormField(
+                            controller: _nameController,
+                            decoration: InputDecoration(
+                              labelText: 'Ad Soyad',
+                              prefixIcon: const Icon(Icons.person,
+                                  color: Color(0xFFFF7E5F)),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF7F7F7),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                        ],
+                        TextFormField(
+                          controller: _emailController,
+                          decoration: InputDecoration(
+                            labelText: 'E-posta',
+                            prefixIcon: const Icon(Icons.mail,
+                                color: Color(0xFFFF7E5F)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: const Color(0xFFF7F7F7),
+                          ),
+                          keyboardType: TextInputType.emailAddress,
+                        ),
+                        const SizedBox(height: 16),
+                        TextFormField(
+                          controller: _passwordController,
+                          obscureText: _obscurePassword,
+                          decoration: InputDecoration(
+                            labelText: 'Şifre',
+                            prefixIcon: const Icon(Icons.lock,
+                                color: Color(0xFFFF7E5F)),
+                            border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12)),
+                            filled: true,
+                            fillColor: const Color(0xFFF7F7F7),
+                            suffixIcon: IconButton(
+                              icon: Icon(
+                                  _obscurePassword
+                                      ? Icons.visibility
+                                      : Icons.visibility_off,
+                                  color: Colors.grey),
+                              onPressed: () => setState(
+                                      () => _obscurePassword = !_obscurePassword),
+                            ),
+                          ),
+                        ),
+                        if (!_isLoginMode) ...[
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _confirmPasswordController,
+                            obscureText: _obscureConfirmPassword,
+                            decoration: InputDecoration(
+                              labelText: 'Şifre Onayı',
+                              prefixIcon: const Icon(Icons.lock,
+                                  color: Color(0xFFFF7E5F)),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF7F7F7),
+                              suffixIcon: IconButton(
+                                icon: Icon(
+                                    _obscureConfirmPassword
+                                        ? Icons.visibility
+                                        : Icons.visibility_off,
+                                    color: Colors.grey),
+                                onPressed: () => setState(() =>
+                                _obscureConfirmPassword =
+                                !_obscureConfirmPassword),
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 16),
+                          TextFormField(
+                            controller: _adminCodeController,
+                            decoration: InputDecoration(
+                              labelText: 'Admin Kodu',
+                              prefixIcon: const Icon(Icons.verified_user,
+                                  color: Color(0xFFFF7E5F)),
+                              border: OutlineInputBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                              filled: true,
+                              fillColor: const Color(0xFFF7F7F7),
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 8),
+                        if (_isLoginMode)
+                          Row(
+                            children: [
+                              Checkbox(
+                                value: _rememberMe,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _rememberMe = value!;
+                                  });
+                                },
+                              ),
+                              const Text('Beni Hatırla',
+                                  style: TextStyle(color: Colors.black87)),
+                            ],
+                          ),
+                        const SizedBox(height: 8),
+                        SizedBox(
+                          height: 48,
+                          child: ElevatedButton.icon(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: const Color(0xFFFF7E5F),
+                              shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12)),
+                            ),
+                            onPressed: _isLoading
+                                ? null
+                                : () => _isLoginMode
+                                ? _handleLogin()
+                                : _handleSignup(),
+                            icon: Icon(
+                                _isLoginMode ? Icons.login : Icons.person_add,
+                                color: Colors.white),
+                            label: _isLoading
+                                ? const SizedBox(
+                                width: 24,
+                                height: 24,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
+                                : Text(_isLoginMode ? 'Giriş Yap' : 'Kayıt Ol',
+                                style: const TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: Colors.white)),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Center(
+                          child: TextButton(
+                            onPressed: _toggleMode,
+                            child: Text.rich(
+                              TextSpan(
+                                text: _isLoginMode
+                                    ? 'Henüz bir hesabın yok mu? '
+                                    : 'Zaten bir hesabın var mı? ',
+                                style: const TextStyle(color: Colors.black54),
+                                children: [
+                                  TextSpan(
+                                    text: _isLoginMode
+                                        ? 'Admin hesabı oluştur'
+                                        : 'Giriş yap',
+                                    style: const TextStyle(
+                                        color: Color(0xFFFF7E5F),
+                                        fontWeight: FontWeight.bold),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
-              ),
+                const SizedBox(height: 32),
+              ],
             ),
           ),
         ),

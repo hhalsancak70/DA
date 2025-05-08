@@ -42,7 +42,7 @@ router.put('/:order_id/items', async (req, res) => {
   const orderId = req.params.order_id;
   const item = req.body;
 
-  const requiredFields = ['name', 'price', 'quantity', 'category_id', 'waiter_id', 'waiter_name'];
+  const requiredFields = ['name', 'price', 'quantity', 'category_id', 'waiter_name'];
   const missing = requiredFields.filter(f => item[f] === undefined);
 
   if (missing.length > 0) {
@@ -50,6 +50,12 @@ router.put('/:order_id/items', async (req, res) => {
   }
 
   try {
+    // waiter_id kontrolü - eğer waiter_id yoksa veya 0 ise ilk garsonu kullan
+    if (!item.waiter_id || item.waiter_id <= 0) {
+      const [waiters] = await db.query(`SELECT id FROM users WHERE role = 'garson' LIMIT 1`);
+      item.waiter_id = waiters.length > 0 ? waiters[0].id : null;
+    }
+    
     await db.query(`
       INSERT INTO order_items (order_id, name, price, quantity, category_id, waiter_id, waiter_name)
       VALUES (?, ?, ?, ?, ?, ?, ?)
@@ -133,18 +139,21 @@ router.put('/:order_id/complete', async (req, res) => {
   const orderId = req.params.order_id;
 
   try {
-    // 1. Siparişi kapat
+    // 1. Siparişi tamamen sil
     const [result] = await db.query(`
-      UPDATE orders
-      SET is_active = FALSE, completed_at = NOW()
-      WHERE id = ?
+      DELETE FROM orders WHERE id = ?
     `, [orderId]);
 
     if (result.affectedRows === 0) {
       return res.status(404).json({ error: 'Sipariş bulunamadı' });
     }
 
-    // 2. Masayı da kapat (ilgili table_id'yi çekmek gerekebilir)
+    // 2. Sipariş öğelerini de sil
+    await db.query(`
+      DELETE FROM order_items WHERE order_id = ?
+    `, [orderId]);
+
+    // 3. Masayı da kapat (ilgili table_id'yi çekmek için silmeden önce)
     const [tableResult] = await db.query(`
       SELECT table_id FROM orders WHERE id = ?
     `, [orderId]);
@@ -158,7 +167,7 @@ router.put('/:order_id/complete', async (req, res) => {
       `, [tableId]);
     }
 
-    res.json({ message: 'Sipariş tamamlandı ve masa kapatıldı' });
+    res.json({ message: 'Sipariş tamamlandı ve silindi' });
 
   } catch (error) {
     console.error('Sipariş tamamlama hatası:', error);
@@ -166,5 +175,26 @@ router.put('/:order_id/complete', async (req, res) => {
   }
 });
 
+// Tüm siparişleri getir
+router.get('/', async (req, res) => {
+  try {
+    // Sadece aktif siparişleri getir
+    const [orders] = await db.query(`SELECT * FROM orders WHERE is_active = TRUE ORDER BY created_at DESC`);
+    
+    // Her sipariş için ürünleri getir
+    for (const order of orders) {
+      const [items] = await db.query(
+        `SELECT * FROM order_items WHERE order_id = ?`,
+        [order.id]
+      );
+      order.items = items;
+    }
+    
+    res.json(orders);
+  } catch (error) {
+    console.error('Siparişleri getirme hatası:', error);
+    res.status(500).json({ error: 'Sunucu hatası' });
+  }
+});
 
 module.exports = router;

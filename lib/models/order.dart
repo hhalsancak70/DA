@@ -124,25 +124,52 @@ class OrderService {
     required String waiterName,
   }) async {
     try {
-      // 1. Aktif sipariş oluştur
-      final createOrderResponse = await http.post(
-        Uri.parse('http://10.0.2.2:3000/orders'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({'table_id': tableId}),
+      // API adresi - emülatör için 10.0.2.2, fiziksel cihaz için yerel IP
+      final apiHost = '10.0.2.2:3000'; // veya 10.31.1.18:3000 fiziksel cihaz için
+      
+      // 1. Önce mevcut aktif siparişleri kontrol et
+      final orderResponse = await http.get(
+        Uri.parse('http://$apiHost/orders'),
       );
+      
+      if (orderResponse.statusCode != 200) {
+        throw Exception('Siparişler alınamadı');
+      }
+      
+      final orders = json.decode(orderResponse.body) as List;
+      final activeOrders = orders
+          .where((order) => 
+              order['is_active'] == 1 && 
+              order['table_id'] == tableId)
+          .toList();
+      
+      int orderId;
+      
+      // Eğer zaten aktif sipariş varsa, onu kullan
+      if (activeOrders.isNotEmpty) {
+        orderId = activeOrders.first['id'];
+        print('Mevcut sipariş bulundu: $orderId');
+      } else {
+        // Yoksa yeni sipariş oluştur
+        final createOrderResponse = await http.post(
+          Uri.parse('http://$apiHost/orders'),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({'table_id': tableId}),
+        );
 
-      if (createOrderResponse.statusCode != 201) {
-        throw Exception('Sipariş oluşturulamadı');
+        if (createOrderResponse.statusCode != 201) {
+          throw Exception('Sipariş oluşturulamadı');
+        }
+
+        orderId = json.decode(createOrderResponse.body)['order_id'];
+        print('Yeni sipariş oluşturuldu: $orderId');
       }
 
-      final orderId = json.decode(createOrderResponse.body)['order_id'];
-
       // 2. Siparişe ürün ekle
-      final addItemResponse = await http.post(
-        Uri.parse('http://10.0.2.2:3000/order-items'),
+      final addItemResponse = await http.put(
+        Uri.parse('http://$apiHost/orders/$orderId/items'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
-          'order_id': orderId,
           'name': name,
           'price': price,
           'quantity': quantity,
@@ -156,7 +183,7 @@ class OrderService {
         throw Exception('Ürün siparişe eklenemedi');
       }
     } catch (e) {
-      print('OrderService error: \$e');
+      print('OrderService error: $e');
       rethrow;
     }
   }

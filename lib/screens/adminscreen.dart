@@ -2,6 +2,10 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
+
+import '../themes/app_theme.dart';
+import 'loginscreen.dart';
 
 class AdminPanelScreen extends StatefulWidget {
   const AdminPanelScreen({Key? key}) : super(key: key);
@@ -15,6 +19,7 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   int _tabIndex = 0;
   List<dynamic> _garsons = [];
   List<dynamic> _admins = [];
+  List<dynamic> _kitchens = [];
   List<dynamic> _orders = [];
   bool _isLoading = false;
   bool _isOrderLoading = false;
@@ -27,12 +32,232 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   final _editNameController = TextEditingController();
   final _editEmailController = TextEditingController();
   final _editPasswordController = TextEditingController();
+  
+  // Kullanıcı bilgileri
+  String _adminName = 'Admin';
+  String _adminEmail = '';
+  String _userId = '';
+  
+  // Profil düzenleme için controller'lar
+  final _profileNameController = TextEditingController();
+  final _profileEmailController = TextEditingController();
+  final _profilePasswordController = TextEditingController();
+  final _profileConfirmPasswordController = TextEditingController();
+  bool _obscurePassword = true;
+  bool _obscureConfirmPassword = true;
+  bool _isProfileLoading = false;
 
   @override
   void initState() {
     super.initState();
+    _loadUserData();
     _fetchUsers();
     _fetchOrders();
+  }
+  
+  Future<void> _loadUserData() async {
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _adminName = prefs.getString('userName') ?? 'Admin';
+      _adminEmail = prefs.getString('userEmail') ?? '';
+      _userId = prefs.getString('userId') ?? '';
+      
+      // Controller'ları güncelle
+      _profileNameController.text = _adminName;
+      _profileEmailController.text = _adminEmail;
+    });
+  }
+
+  @override
+  void dispose() {
+    _nameController.dispose();
+    _emailController.dispose();
+    _passwordController.dispose();
+    _editNameController.dispose();
+    _editEmailController.dispose();
+    _editPasswordController.dispose();
+    _profileNameController.dispose();
+    _profileEmailController.dispose();
+    _profilePasswordController.dispose();
+    _profileConfirmPasswordController.dispose();
+    super.dispose();
+  }
+  
+  // Kullanıcı bilgilerini güncelleme
+  Future<void> _updateUserProfile() async {
+    if (_profileNameController.text.trim().isEmpty || _profileEmailController.text.trim().isEmpty) {
+      _showMessage('Lütfen isim ve e-posta alanlarını doldurun');
+      return;
+    }
+    
+    // Yeni şifre girilmişse kontrol et
+    if (_profilePasswordController.text.isNotEmpty) {
+      if (_profilePasswordController.text != _profileConfirmPasswordController.text) {
+        _showMessage('Şifreler eşleşmiyor');
+        return;
+      }
+      if (_profilePasswordController.text.length < 6) {
+        _showMessage('Şifre en az 6 karakter olmalıdır');
+        return;
+      }
+    }
+    
+    setState(() => _isProfileLoading = true);
+    
+    // Güncelleme verisini hazırla
+    final Map<String, dynamic> updateData = {
+      'name': _profileNameController.text.trim(),
+      'email': _profileEmailController.text.trim(),
+    };
+    
+    // Eğer şifre girilmişse ekle
+    if (_profilePasswordController.text.isNotEmpty) {
+      updateData['password'] = _profilePasswordController.text;
+    }
+    
+    try {
+      final response = await http.put(
+        Uri.parse('http://10.0.2.2:3000/users/$_userId'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode(updateData),
+      );
+      
+      if (response.statusCode == 200) {
+        // Başarıyla güncellendi, SharedPreferences'ı güncelle
+        final prefs = await SharedPreferences.getInstance();
+        prefs.setString('userName', _profileNameController.text.trim());
+        prefs.setString('userEmail', _profileEmailController.text.trim());
+        
+        setState(() {
+          _adminName = _profileNameController.text.trim();
+          _adminEmail = _profileEmailController.text.trim();
+        });
+        
+        _showMessage('Profil bilgileriniz güncellendi', success: true);
+        Navigator.of(context).pop(); // Diyaloğu kapat
+        
+        // Şifreleri temizle
+        _profilePasswordController.clear();
+        _profileConfirmPasswordController.clear();
+      } else {
+        final error = json.decode(response.body)['error'] ?? 'Güncelleme başarısız';
+        _showMessage(error);
+      }
+    } catch (e) {
+      _showMessage('Sunucuya bağlanılamadı');
+    } finally {
+      setState(() => _isProfileLoading = false);
+    }
+  }
+
+  void _showEditProfileDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) {
+          return AlertDialog(
+            title: Row(
+              children: [
+                Icon(Icons.person, color: AppTheme.primaryColor),
+                const SizedBox(width: 8),
+                const Text('Profil Düzenle', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              ],
+            ),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // İsim alanı
+                  TextField(
+                    controller: _profileNameController,
+                    decoration: AppTheme.inputDecoration(
+                      labelText: 'İsim',
+                      prefixIcon: Icons.person_outline,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // E-posta alanı
+                  TextField(
+                    controller: _profileEmailController,
+                    decoration: AppTheme.inputDecoration(
+                      labelText: 'E-posta',
+                      prefixIcon: Icons.email_outlined,
+                    ),
+                    keyboardType: TextInputType.emailAddress,
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Şifre alanı (isteğe bağlı)
+                  TextField(
+                    controller: _profilePasswordController,
+                    obscureText: _obscurePassword,
+                    decoration: AppTheme.inputDecoration(
+                      labelText: 'Yeni Şifre (isteğe bağlı)',
+                      prefixIcon: Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscurePassword ? Icons.visibility_off : Icons.visibility,
+                          color: AppTheme.textSecondary,
+                        ),
+                        onPressed: () {
+                          setState(() => _obscurePassword = !_obscurePassword);
+                        },
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Şifre onay alanı
+                  TextField(
+                    controller: _profileConfirmPasswordController,
+                    obscureText: _obscureConfirmPassword,
+                    decoration: AppTheme.inputDecoration(
+                      labelText: 'Şifre Onay',
+                      prefixIcon: Icons.lock_outline,
+                      suffixIcon: IconButton(
+                        icon: Icon(
+                          _obscureConfirmPassword ? Icons.visibility_off : Icons.visibility,
+                          color: AppTheme.textSecondary,
+                        ),
+                        onPressed: () {
+                          setState(() => _obscureConfirmPassword = !_obscureConfirmPassword);
+                        },
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('İptal'),
+                style: TextButton.styleFrom(foregroundColor: Colors.grey),
+              ),
+              ElevatedButton(
+                onPressed: _isProfileLoading ? null : _updateUserProfile,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppTheme.primaryColor,
+                  foregroundColor: Colors.white,
+                ),
+                child: _isProfileLoading
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Kaydet'),
+              ),
+            ],
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+          );
+        },
+      ),
+    );
   }
 
   Future<void> _fetchUsers() async {
@@ -42,10 +267,14 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       await http.get(Uri.parse('http://10.0.2.2:3000/users?role=garson'));
       final adminRes =
       await http.get(Uri.parse('http://10.0.2.2:3000/users?role=admin'));
-      if (garsonRes.statusCode == 200 && adminRes.statusCode == 200) {
+      final kitchenRes =
+      await http.get(Uri.parse('http://10.0.2.2:3000/users?role=mutfak'));
+      
+      if (garsonRes.statusCode == 200 && adminRes.statusCode == 200 && kitchenRes.statusCode == 200) {
         setState(() {
           _garsons = json.decode(garsonRes.body);
           _admins = json.decode(adminRes.body);
+          _kitchens = json.decode(kitchenRes.body);
         });
       } else {
         _showMessage('Kullanıcılar yüklenemedi');
@@ -256,45 +485,113 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
 
   Widget _buildUserCard(Map<String, dynamic> user, String role) {
     final isAdmin = role == 'admin';
-    final currentUserEmail =
-    null; // TODO: Giriş yapan adminin emailini buraya ekle (isteğe göre güncellenebilir)
+    final currentUserEmail = null;
+    
+    // Rol adını belirle
+    String roleName = 'Kullanıcı';
+    if (role == 'admin') roleName = 'Admin';
+    else if (role == 'garson') roleName = 'Garson';
+    else if (role == 'mutfak') roleName = 'Mutfak';
+
+    Color roleColor = AppTheme.primaryColor;
+    if (role == 'admin') roleColor = Colors.purple;
+    else if (role == 'garson') roleColor = AppTheme.primaryColor;
+    else if (role == 'mutfak') roleColor = Colors.green;
+    
     return Card(
+      elevation: 2,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+      ),
+      margin: const EdgeInsets.only(bottom: 12),
       child: ListTile(
+        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
         leading: CircleAvatar(
-          backgroundColor: Colors.orange[100],
-          child: Icon(Icons.person, color: Colors.deepOrange),
+          backgroundColor: roleColor.withOpacity(0.1),
+          child: Icon(
+            role == 'admin' 
+                ? Icons.admin_panel_settings
+                : role == 'mutfak' 
+                    ? Icons.restaurant
+                    : Icons.person,
+            color: roleColor,
+          ),
         ),
-        title: Text(user['name'] ?? 'İsimsiz'),
+        title: Text(
+          user['name'] ?? 'İsimsiz',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppTheme.textPrimary,
+          ),
+        ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(user['email'] ?? ''),
-            Row(
-              children: [
-                Icon(Icons.lock, size: 16, color: Colors.grey[600]),
-                const SizedBox(width: 4),
-                Text(isAdmin ? 'Admin' : 'Garson',
-                    style: TextStyle(fontSize: 12)),
-              ],
+            const SizedBox(height: 2),
+            Text(
+              user['email'] ?? '',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppTheme.textSecondary,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: roleColor.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(
+                    role == 'admin' 
+                        ? Icons.verified_user
+                        : role == 'mutfak' 
+                            ? Icons.restaurant_menu
+                            : Icons.badge,
+                    size: 14,
+                    color: roleColor,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    roleName, 
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                      color: roleColor,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ],
         ),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (!isAdmin)
-              IconButton(
-                icon: const Icon(Icons.edit, color: Colors.deepOrange),
-                onPressed: () => _editGarson(
-                    user['id'], user['name'] ?? '', user['email'] ?? ''),
-              ),
-            if (!isAdmin)
-              IconButton(
-                icon: const Icon(Icons.delete, color: Colors.red),
-                onPressed: () => _deleteUser(user['id']),
-              ),
-          ],
-        ),
+        trailing: !isAdmin 
+            ? Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: Icon(
+                      Icons.edit, 
+                      color: AppTheme.primaryColor,
+                      size: 20,
+                    ),
+                    onPressed: () => _editGarson(
+                        user['id'], user['name'] ?? '', user['email'] ?? ''),
+                  ),
+                  IconButton(
+                    icon: Icon(
+                      Icons.delete, 
+                      color: AppTheme.errorColor,
+                      size: 20,
+                    ),
+                    onPressed: () => _deleteUser(user['id']),
+                  ),
+                ],
+              )
+            : null,
       ),
     );
   }
@@ -462,77 +759,133 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   Widget _buildAddUserModal() {
     return Dialog(
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 5,
       child: Padding(
         padding: const EdgeInsets.all(24),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('Yeni Kullanıcı Ekle',
-                style: TextStyle(
+            Row(
+              children: [
+                Icon(
+                  Icons.person_add,
+                  color: AppTheme.primaryColor,
+                  size: 24,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Yeni Kullanıcı Ekle',
+                  style: TextStyle(
                     fontSize: 20,
                     fontWeight: FontWeight.bold,
-                    color: Colors.deepOrange)),
-            const SizedBox(height: 16),
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 24),
             DropdownButtonFormField<String>(
               value: _selectedRole,
-              items: const [
-                DropdownMenuItem(value: 'garson', child: Text('Garson')),
-                DropdownMenuItem(value: 'admin', child: Text('Admin')),
+              items: [
+                DropdownMenuItem(
+                  value: 'garson', 
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.person, 
+                        color: AppTheme.primaryColor, 
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Garson'),
+                    ],
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 'mutfak', 
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.restaurant, 
+                        color: Colors.green, 
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Mutfak'),
+                    ],
+                  ),
+                ),
+                DropdownMenuItem(
+                  value: 'admin', 
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.admin_panel_settings, 
+                        color: Colors.purple, 
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      const Text('Admin'),
+                    ],
+                  ),
+                ),
               ],
               onChanged: (v) => setState(() => _selectedRole = v ?? 'garson'),
-              decoration: const InputDecoration(
+              decoration: AppTheme.inputDecoration(
                 labelText: 'Rol',
-                prefixIcon: Icon(Icons.person),
-                border: OutlineInputBorder(),
+                prefixIcon: Icons.badge,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _nameController,
-              decoration: const InputDecoration(
+              decoration: AppTheme.inputDecoration(
                 labelText: 'Ad Soyad',
-                prefixIcon: Icon(Icons.person_outline),
-                border: OutlineInputBorder(),
+                prefixIcon: Icons.person_outline,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _emailController,
-              decoration: const InputDecoration(
+              decoration: AppTheme.inputDecoration(
                 labelText: 'E-posta',
-                prefixIcon: Icon(Icons.mail_outline),
-                border: OutlineInputBorder(),
+                prefixIcon: Icons.mail_outline,
               ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 16),
             TextField(
               controller: _passwordController,
               obscureText: true,
-              decoration: const InputDecoration(
+              decoration: AppTheme.inputDecoration(
                 labelText: 'Şifre',
-                prefixIcon: Icon(Icons.lock_outline),
-                border: OutlineInputBorder(),
+                prefixIcon: Icons.lock_outline,
               ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 24),
             Row(
               mainAxisAlignment: MainAxisAlignment.end,
               children: [
                 TextButton(
                   onPressed: () => setState(() => _showAddUserModal = false),
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppTheme.textSecondary,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  ),
                   child: const Text('İptal'),
                 ),
-                const SizedBox(width: 8),
+                const SizedBox(width: 12),
                 ElevatedButton(
                   onPressed: _isLoading ? null : _addUser,
-                  style: ElevatedButton.styleFrom(
-                      backgroundColor: Colors.deepOrange),
+                  style: AppTheme.elevatedButtonStyle,
                   child: _isLoading
                       ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                          strokeWidth: 2, color: Colors.white))
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2, 
+                            color: Colors.white,
+                          ),
+                        )
                       : const Text('Ekle'),
                 ),
               ],
@@ -622,30 +975,59 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFFF5F5F5),
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text('Admin Panel'),
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: AppTheme.primaryColor,
         elevation: 0,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.logout),
+            tooltip: 'Çıkış Yap',
+            onPressed: () => _handleLogout(context),
+          ),
+          const SizedBox(width: 8),
+          InkWell(
+            onTap: _showEditProfileDialog,
+            borderRadius: BorderRadius.circular(40),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              child: CircleAvatar(
+                backgroundColor: Colors.white,
+                radius: 18,
+                child: Text(
+                  _adminName.isNotEmpty ? _adminName[0].toUpperCase() : 'A',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: AppTheme.primaryColor,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+        ],
       ),
-      floatingActionButton: _tabIndex != 2
+      floatingActionButton: _tabIndex != 3
           ? FloatingActionButton(
-        backgroundColor: Colors.deepOrange,
-        child: const Icon(Icons.person_add),
-        onPressed: () => setState(() => _showAddUserModal = true),
-      )
+              backgroundColor: AppTheme.primaryColor,
+              child: const Icon(Icons.person_add),
+              onPressed: () => setState(() => _showAddUserModal = true),
+            )
           : null,
       body: Stack(
         children: [
           Column(
             children: [
               Container(
-                color: Colors.deepOrange,
+                color: AppTheme.primaryColor,
                 child: Row(
                   children: [
                     _buildTabButton('Garsonlar', 0, Icons.people),
-                    _buildTabButton('Adminler', 1, Icons.admin_panel_settings),
-                    _buildTabButton('Siparişler', 2, Icons.receipt_long),
+                    _buildTabButton('Mutfak', 1, Icons.restaurant),
+                    _buildTabButton('Adminler', 2, Icons.admin_panel_settings),
+                    _buildTabButton('Siparişler', 3, Icons.receipt_long),
                   ],
                 ),
               ),
@@ -655,8 +1037,10 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
                   child: _tabIndex == 0
                       ? _buildUserList(_garsons, 'garson')
                       : _tabIndex == 1
-                      ? _buildUserList(_admins, 'admin')
-                      : _buildOrderList(),
+                          ? _buildUserList(_kitchens, 'mutfak')
+                          : _tabIndex == 2
+                              ? _buildUserList(_admins, 'admin')
+                              : _buildOrderList(),
                 ),
               ),
             ],
@@ -674,13 +1058,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       child: GestureDetector(
         onTap: () => setState(() => _tabIndex = index),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 18),
+          padding: const EdgeInsets.symmetric(vertical: 16),
           decoration: BoxDecoration(
-            color: isSelected ? Colors.deepOrange : Colors.deepOrange[200],
+            color: isSelected ? AppTheme.primaryColor : AppTheme.primaryColor.withOpacity(0.7),
             border: Border(
               bottom: BorderSide(
                 color: isSelected ? Colors.white : Colors.transparent,
-                width: 4,
+                width: 3,
               ),
             ),
           ),
@@ -688,7 +1072,13 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
             children: [
               Icon(icon, color: Colors.white),
               const SizedBox(height: 4),
-              Text(label, style: const TextStyle(color: Colors.white)),
+              Text(
+                label, 
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
             ],
           ),
         ),
@@ -697,37 +1087,94 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
   }
 
   Widget _buildUserList(List<dynamic> users, String role) {
+    String roleTitle = 'Kullanıcılar';
+    IconData roleIcon = Icons.people;
+    Color roleColor = AppTheme.primaryColor;
+    
+    if (role == 'admin') {
+      roleTitle = 'Adminler';
+      roleIcon = Icons.admin_panel_settings;
+      roleColor = Colors.purple;
+    } else if (role == 'garson') {
+      roleTitle = 'Garsonlar';
+      roleIcon = Icons.people;
+      roleColor = AppTheme.primaryColor;
+    } else if (role == 'mutfak') {
+      roleTitle = 'Mutfak Ekibi';
+      roleIcon = Icons.restaurant;
+      roleColor = Colors.green;
+    }
+    
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           children: [
-            const Icon(Icons.people, color: Colors.deepOrange),
-            const SizedBox(width: 8),
-            Text('Kullanıcılar',
-                style:
-                const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-            const SizedBox(width: 8),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-              decoration: BoxDecoration(
-                color: Colors.deepOrange,
-                borderRadius: BorderRadius.circular(12),
+            Icon(roleIcon, color: roleColor, size: 24),
+            const SizedBox(width: 12),
+            Text(
+              roleTitle,
+              style: TextStyle(
+                fontSize: 20, 
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
               ),
-              child: Text('${users.length}',
-                  style: const TextStyle(color: Colors.white)),
+            ),
+            const SizedBox(width: 12),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+              decoration: BoxDecoration(
+                color: roleColor,
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: Text(
+                '${users.length}',
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.bold,
+                  fontSize: 14,
+                ),
+              ),
             ),
           ],
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 16),
         Expanded(
           child: users.isEmpty
-              ? const Center(child: Text('Henüz kullanıcı yok'))
+              ? Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        roleIcon,
+                        size: 64,
+                        color: Colors.grey.shade300,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Henüz $roleTitle yok',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Sağ alttaki + butonuna tıklayarak ekleyebilirsiniz',
+                        style: TextStyle(
+                          fontSize: 14,
+                          color: AppTheme.textLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                )
               : ListView.builder(
-            itemCount: users.length,
-            itemBuilder: (context, index) =>
-                _buildUserCard(users[index], role),
-          ),
+                  itemCount: users.length,
+                  itemBuilder: (context, index) =>
+                      _buildUserCard(users[index], role),
+                ),
         ),
       ],
     );
@@ -834,6 +1281,31 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
           );
         }).toList(),
       ],
+    );
+  }
+
+  void _showFeatureUnderDevelopment(BuildContext context) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Bu özellik henüz geliştirme aşamasındadır.'),
+        backgroundColor: Colors.deepOrange,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.all(Radius.circular(10))),
+        margin: EdgeInsets.all(10),
+      ),
+    );
+  }
+  
+  void _handleLogout(BuildContext context) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+    
+    if (!mounted) return;
+    
+    Navigator.pushAndRemoveUntil(
+      context,
+      MaterialPageRoute(builder: (context) => const LoginScreen()),
+      (route) => false,
     );
   }
 }

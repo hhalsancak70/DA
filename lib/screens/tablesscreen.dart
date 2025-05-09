@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
+import '../themes/app_theme.dart';
 import 'menuscreen.dart';
 import 'ordersscreen.dart';
 
@@ -75,7 +76,7 @@ class _TablesScreenState extends State<TablesScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message),
-        backgroundColor: success ? Colors.green : Colors.red,
+        backgroundColor: success ? AppTheme.successColor : AppTheme.errorColor,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(10),
@@ -86,247 +87,333 @@ class _TablesScreenState extends State<TablesScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: AppTheme.backgroundColor,
       appBar: AppBar(
         title: const Text(
           'Masalar',
-          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 22),
+          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 20),
         ),
-        backgroundColor: Colors.deepOrange,
+        backgroundColor: AppTheme.primaryColor,
         elevation: 0,
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh, size: 28),
+            icon: const Icon(Icons.refresh, size: 24),
             onPressed: _fetchActiveTables,
             tooltip: 'Yenile',
           ),
           const SizedBox(width: 8),
         ],
       ),
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [Colors.deepOrange.shade50, Colors.white],
-          ),
-        ),
-        child: _isLoading
-            ? const Center(
-                child: CircularProgressIndicator(
-                  color: Colors.deepOrange,
-                  strokeWidth: 3,
+      body: _isLoading
+        ? Center(
+            child: CircularProgressIndicator(
+              color: AppTheme.primaryColor,
+              strokeWidth: 3,
+            ),
+          )
+        : Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Başlık ve bilgi alanı
+              Container(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  boxShadow: [
+                    BoxShadow(
+                      color: AppTheme.shadowColor,
+                      blurRadius: 4,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
                 ),
-              )
-            : SafeArea(
-                child: Padding(
-                  padding: const EdgeInsets.all(12),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Padding(
-                        padding: EdgeInsets.only(left: 8, bottom: 12),
-                        child: Text(
-                          'Mevcut Masalar',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepOrange,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.table_bar,
+                              color: AppTheme.primaryColor,
+                              size: 24,
+                            ),
+                            const SizedBox(width: 10),
+                            Text(
+                              'Mevcut Masalar',
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: AppTheme.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: activeTableIds.isNotEmpty 
+                                ? Colors.grey.shade600
+                                : AppTheme.successColor,
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                activeTableIds.isNotEmpty
+                                    ? Icons.table_restaurant
+                                    : Icons.check_circle,
+                                color: Colors.white,
+                                size: 16,
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                activeTableIds.isEmpty
+                                    ? 'Tüm Masalar Boş'
+                                    : '${activeTableIds.length} Masa Dolu',
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Sipariş açmak istediğiniz masaya tıklayın',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: AppTheme.textSecondary,
                       ),
-                      Expanded(
-                        child: GridView.builder(
-                          padding: const EdgeInsets.all(4),
-                          itemCount: 20, // örnek olarak 20 masa
-                          gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                            crossAxisCount: 3,
-                            mainAxisSpacing: 8,
-                            crossAxisSpacing: 8,
-                            childAspectRatio: 0.75,
+                    ),
+                  ],
+                ),
+              ),
+              
+              // Masa listesi alanı
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: GridView.builder(
+                    padding: const EdgeInsets.all(4),
+                    itemCount: 20, // örnek olarak 20 masa
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 3,
+                      mainAxisSpacing: 12,
+                      crossAxisSpacing: 12,
+                      childAspectRatio: 0.7,
+                    ),
+                    itemBuilder: (_, index) {
+                      final tableNumber = index + 1;
+                      final isActive = activeTableIds.contains(tableNumber);
+                      
+                      // Siparişi olan masalar 
+                      if (isActive) {
+                        return Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey.withOpacity(0.2),
+                                blurRadius: 6,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                            border: Border.all(color: Colors.grey.shade400, width: 1.5),
                           ),
-                          itemBuilder: (_, index) {
-                            final tableNumber = index + 1;
-                            final isActive = activeTableIds.contains(tableNumber);
-                            
-                            // Siparişi olan masalar için kesinlikle tıklanamaz bir container oluştur
-                            if (isActive) {
-                              return Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.grey[300],
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.black.withOpacity(0.1),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
+                          child: ColorFiltered(
+                            colorFilter: const ColorFilter.matrix(<double>[
+                              0.3, 0.59, 0.11, 0, 0,
+                              0.3, 0.59, 0.11, 0, 0,
+                              0.3, 0.59, 0.11, 0, 0,
+                              0,      0,      0,      1, 0,
+                            ]),
+                            child: Padding(
+                              padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Container(
+                                    padding: const EdgeInsets.all(16),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.shade400,
+                                      shape: BoxShape.circle,
+                                      boxShadow: [
+                                        BoxShadow(
+                                          color: Colors.black.withOpacity(0.1),
+                                          blurRadius: 4,
+                                          offset: const Offset(0, 2),
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                  border: Border.all(color: Colors.grey[600]!, width: 1.5),
-                                ),
-                                child: ColorFiltered(
-                                  // Siyah-beyaz görünümü için ColorFilter uygula
-                                  colorFilter: const ColorFilter.matrix(<double>[
-                                    0.2126, 0.7152, 0.0722, 0, 0,
-                                    0.2126, 0.7152, 0.0722, 0, 0,
-                                    0.2126, 0.7152, 0.0722, 0, 0,
-                                    0,      0,      0,      1, 0,
-                                  ]),
-                                  child: Padding(
-                                    padding: const EdgeInsets.symmetric(vertical: 4),
-                                    child: Column(
-                                      mainAxisAlignment: MainAxisAlignment.center,
+                                    child: Text(
+                                      '$tableNumber',
+                                      style: const TextStyle(
+                                        fontSize: 20,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 12),
+                                  const Text(
+                                    'Masa',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.black54,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 12, 
+                                      vertical: 6
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: Colors.grey.withOpacity(0.2),
+                                      borderRadius: BorderRadius.circular(20),
+                                      border: Border.all(
+                                        color: Colors.grey.shade400,
+                                        width: 1,
+                                      ),
+                                    ),
+                                    child: Row(
                                       mainAxisSize: MainAxisSize.min,
                                       children: [
-                                        Container(
-                                          padding: const EdgeInsets.all(8),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade400,
-                                            shape: BoxShape.circle,
-                                          ),
-                                          child: Text(
-                                            '$tableNumber',
-                                            style: const TextStyle(
-                                              fontSize: 20,
-                                              fontWeight: FontWeight.bold,
-                                              color: Colors.white,
-                                            ),
-                                          ),
+                                        const Icon(
+                                          Icons.lock,
+                                          color: Colors.black54,
+                                          size: 14,
                                         ),
-                                        const SizedBox(height: 4),
+                                        const SizedBox(width: 4),
                                         const Text(
-                                          'Masa',
+                                          'Dolu',
                                           style: TextStyle(
-                                            fontSize: 14,
+                                            fontSize: 12,
                                             fontWeight: FontWeight.bold,
                                             color: Colors.black54,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Container(
-                                          padding: const EdgeInsets.symmetric(
-                                            horizontal: 6, 
-                                            vertical: 2
-                                          ),
-                                          decoration: BoxDecoration(
-                                            color: Colors.grey.shade500.withOpacity(0.7),
-                                            borderRadius: BorderRadius.circular(8),
-                                          ),
-                                          child: const Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(
-                                                Icons.lock,
-                                                color: Colors.white,
-                                                size: 12,
-                                              ),
-                                              SizedBox(width: 2),
-                                              Text(
-                                                'Dolu',
-                                                style: TextStyle(
-                                                  fontSize: 10,
-                                                  fontWeight: FontWeight.bold,
-                                                  color: Colors.white,
-                                                ),
-                                              ),
-                                            ],
                                           ),
                                         ),
                                       ],
                                     ),
                                   ),
-                                ),
-                              );
-                            }
-                            
-                            // Boş masalar için GestureDetector ile sarılmış container
-                            return GestureDetector(
-                              onTap: () => _createTableOrder(tableNumber),
-                              child: Container(
-                                decoration: BoxDecoration(
-                                  color: Colors.white,
-                                  borderRadius: BorderRadius.circular(12),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: Colors.orange.withOpacity(0.2),
-                                      blurRadius: 4,
-                                      offset: const Offset(0, 2),
+                                ],
+                              ),
+                            ),
+                          ),
+                        );
+                      }
+                      
+                      // Boş masalar
+                      return GestureDetector(
+                        onTap: () => _createTableOrder(tableNumber),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppTheme.primaryColor.withOpacity(0.15),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3),
+                              ),
+                            ],
+                            border: Border.all(
+                              color: AppTheme.primaryColor.withOpacity(0.3),
+                              width: 1.5,
+                            ),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 8),
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.all(16),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor,
+                                    shape: BoxShape.circle,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: AppTheme.primaryColor.withOpacity(0.3),
+                                        blurRadius: 8,
+                                        offset: const Offset(0, 3),
+                                      ),
+                                    ],
+                                  ),
+                                  child: Text(
+                                    '$tableNumber',
+                                    style: const TextStyle(
+                                      fontSize: 20,
+                                      fontWeight: FontWeight.bold,
+                                      color: Colors.white,
                                     ),
-                                  ],
-                                  border: Border.all(color: Colors.orange[300]!, width: 1.5),
+                                  ),
                                 ),
-                                child: Padding(
-                                  padding: const EdgeInsets.symmetric(vertical: 4),
-                                  child: Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
+                                const SizedBox(height: 12),
+                                Text(
+                                  'Masa',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppTheme.primaryColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 12, 
+                                    vertical: 6
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppTheme.primaryColor.withOpacity(0.08),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: AppTheme.primaryColor.withOpacity(0.2),
+                                      width: 1,
+                                    ),
+                                  ),
+                                  child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Container(
-                                        padding: const EdgeInsets.all(8),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.shade400,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: Text(
-                                          '$tableNumber',
-                                          style: const TextStyle(
-                                            fontSize: 20,
-                                            fontWeight: FontWeight.bold,
-                                            color: Colors.white,
-                                          ),
-                                        ),
+                                      Icon(
+                                        Icons.add_circle,
+                                        color: AppTheme.primaryColor,
+                                        size: 14,
                                       ),
-                                      const SizedBox(height: 4),
-                                      const Text(
-                                        'Masa',
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Sipariş Al',
                                         style: TextStyle(
-                                          fontSize: 14,
+                                          fontSize: 12,
                                           fontWeight: FontWeight.bold,
-                                          color: Colors.orange,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 4),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                          horizontal: 6, 
-                                          vertical: 2
-                                        ),
-                                        decoration: BoxDecoration(
-                                          color: Colors.orange.withOpacity(0.1),
-                                          borderRadius: BorderRadius.circular(8),
-                                        ),
-                                        child: const Row(
-                                          mainAxisSize: MainAxisSize.min,
-                                          children: [
-                                            Icon(
-                                              Icons.add_circle,
-                                              color: Colors.deepOrange,
-                                              size: 12,
-                                            ),
-                                            SizedBox(width: 2),
-                                            Text(
-                                              'Sipariş Al',
-                                              style: TextStyle(
-                                                fontSize: 10,
-                                                fontWeight: FontWeight.bold,
-                                                color: Colors.deepOrange,
-                                              ),
-                                            ),
-                                          ],
+                                          color: AppTheme.primaryColor,
                                         ),
                                       ),
                                     ],
                                   ),
                                 ),
-                              ),
-                            );
-                          },
+                              ],
+                            ),
+                          ),
                         ),
-                      ),
-                    ],
+                      );
+                    },
                   ),
                 ),
               ),
-      ),
+            ],
+          ),
     );
   }
 }

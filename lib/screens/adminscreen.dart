@@ -104,18 +104,18 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
     
     setState(() => _isProfileLoading = true);
     
-    // Güncelleme verisini hazırla
-    final Map<String, dynamic> updateData = {
-      'name': _profileNameController.text.trim(),
-      'email': _profileEmailController.text.trim(),
-    };
-    
-    // Eğer şifre girilmişse ekle
-    if (_profilePasswordController.text.isNotEmpty) {
-      updateData['password'] = _profilePasswordController.text;
-    }
-    
     try {
+      // Güncelleme verisini hazırla
+      final Map<String, dynamic> updateData = {
+        'name': _profileNameController.text.trim(),
+        'email': _profileEmailController.text.trim(),
+      };
+      
+      // Eğer şifre girilmişse ekle
+      if (_profilePasswordController.text.isNotEmpty) {
+        updateData['password'] = _profilePasswordController.text;
+      }
+      
       final response = await http.put(
         Uri.parse('http://10.0.2.2:3000/users/$_userId'),
         headers: {'Content-Type': 'application/json'},
@@ -125,8 +125,8 @@ class _AdminPanelScreenState extends State<AdminPanelScreen>
       if (response.statusCode == 200) {
         // Başarıyla güncellendi, SharedPreferences'ı güncelle
         final prefs = await SharedPreferences.getInstance();
-        prefs.setString('userName', _profileNameController.text.trim());
-        prefs.setString('userEmail', _profileEmailController.text.trim());
+        await prefs.setString('userName', _profileNameController.text.trim());
+        await prefs.setString('userEmail', _profileEmailController.text.trim());
         
         setState(() {
           _adminName = _profileNameController.text.trim();

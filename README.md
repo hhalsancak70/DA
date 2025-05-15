@@ -1,5 +1,7 @@
 # Restoran Yönetim Sistemi
 
+> ⚠️ **ÖNEMLİ NOT**: Bu proje özel bir projedir ve tüm hakları saklıdır. İzinsiz kullanımı, dağıtımı veya kopyalanması yasaktır.
+
 Bu proje, restoranlar için geliştirilmiş kapsamlı bir yönetim sistemidir. Flutter kullanılarak geliştirilmiş olan bu uygulama, restoran yöneticilerine, garsonlara ve mutfak personeline özel arayüzler sunmaktadır.
 
 ## 🚀 Özellikler
@@ -166,11 +168,16 @@ flutter run
 
 ## 📝 Lisans
 
-Bu proje MIT lisansı altında lisanslanmıştır. Detaylar için [LICENSE](LICENSE) dosyasına bakın.
+Bu proje, Abdullah Gül Üniversitesi Bilgisayar Mühendisliği Bölümü öğrencileri tarafından geliştirilmiştir. Tüm hakları saklıdır.
+
+- Projenin kaynak kodları, tasarımı ve içeriği telif hakkı ile korunmaktadır
+- İzinsiz kullanım, dağıtım veya kopyalama yasaktır
+- Proje sadece portfolyo ve CV amaçlı paylaşılabilir
+- Ticari kullanım için yazarlardan yazılı izin alınması gerekmektedir
 
 ## 👨‍💻 Geliştirici Ekibi
 
-Bu proje, Abdullah Gül Üniversitesi öğrencileri tarafından geliştirilmiştir:
+Bu proje, Abdullah Gül Üniversitesi Bilgisayar Mühendisliği Bölümü öğrencileri tarafından geliştirilmiştir:
 
 - Ahmet Karauz
 - Ekin Tekin
@@ -178,10 +185,16 @@ Bu proje, Abdullah Gül Üniversitesi öğrencileri tarafından geliştirilmişt
 - Dilhan Deniz
 - Selahattin Eyyup Yağmur
 
-## 📞 İletişim
+## 📞 İletişim ve İzin
+
+Projeyi görüntülemek, incelemek veya kullanmak için lütfen aşağıdaki e-posta adreslerinden biriyle iletişime geçin:
 
 - Ahmet Karauz: ahmet.karauz@agu.edu.tr
 - Ekin Tekin: ekin.tekin@agu.edu.tr
 - Hüseyin Alsancak: huseyin.alsancak@agu.edu.tr
 - Dilhan Deniz: dilhan.deniz@agu.edu.tr
 - Selahattin Eyyup Yağmur: selahattin.eyyup.yagmur@agu.edu.tr
+
+## 🔒 Güvenlik ve Erişim
+
+Bu proje private bir repository'de tutulmaktadır. Erişim izni olmayan kişilerin projeyi görüntülemesi, indirmesi veya kullanması yasaktır. İzinsiz erişim girişimleri yasal işlemlere tabi tutulacaktır.
